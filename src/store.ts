@@ -43,12 +43,13 @@ const store = new Vuex.Store<IState>({
         commit(ADD_UNITY, unity)
       })
     },
-    resetUnity({ commit }): void {
+    resetUnities({ commit }): void {
       commit(RESET_UNITIES)
     }
   },
   getters: {
     context: (state: IState) => state.context,
+    unities: (state: IState) => state.unities,
     shapes: (state: IState): Shape[] =>
       state.unities.map((unity: Unity) => unity.shape),
     fieldOfViews: (state: IState): Circle[] =>

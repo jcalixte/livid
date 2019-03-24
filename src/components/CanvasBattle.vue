@@ -4,31 +4,32 @@
       <button @click="start">démarrer</button>
       <button @click="init">réinitialiser</button>
       <button @click="next(0, false)">suivant</button>
+      <button @click="random">random</button>
     </div>
     <div>
       <canvas ref="canvas" :width="size" :height="size"></canvas>
     </div>
-    <pre v-for="(shape, k) in shapes" :key="k">{{ shape }}</pre>
+    <pre v-for="(unity, k) in unities" :key="k">{{ unity }}</pre>
   </div>
 </template>
 
 <script lang="ts">
 import { Action, Getter } from 'vuex-class'
 import { Component, Vue } from 'vue-property-decorator'
-import Shape from '@/engine/Shape'
+import Unity from '@/models/Unity'
 
 @Component
 export default class CanvasBattle extends Vue {
   @Action
   public setContext!: any
   @Action
-  public addShape!: any
+  public addUnity!: any
   @Action
-  public resetShapes!: any
+  public resetUnities!: any
   @Getter
   public context!: CanvasRenderingContext2D | null
   @Getter
-  public shapes!: Shape[]
+  public unities!: Unity[]
   public canvas: HTMLCanvasElement | null = null
   public size: number = 400
 
@@ -37,23 +38,25 @@ export default class CanvasBattle extends Vue {
   }
 
   public init(): void {
-    this.resetShapes()
+    this.resetUnities()
     this.canvas = this.$refs.canvas as HTMLCanvasElement
     this.setContext(this.canvas.getContext('2d'))
     const centerX = this.canvas.width / 2
     const centerY = this.canvas.height / 2
 
-    const shape = new Shape(
+    const ally = new Unity(
+      'France',
       { x: centerX - 50, y: centerY + 100 },
-      { width: 10, height: 100, color: '#0550af' }
+      '#0550af'
     )
-    const enemy = new Shape(
+    const enemy = new Unity(
+      'Austria',
       { x: centerX + 100, y: centerY - 100 },
-      { width: 10, height: 100, color: '#af0550' }
+      '#af0550'
     )
-    shape.setTarget(enemy)
+    ally.setTarget(enemy)
 
-    this.addShape([enemy, shape])
+    this.addUnity([enemy, ally])
   }
 
   public start(): void {
@@ -65,9 +68,16 @@ export default class CanvasBattle extends Vue {
       return
     }
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
-    this.shapes.forEach((s: Shape) => s.draw())
+    this.unities.forEach((s: Unity) => s.draw())
     if (request) {
       requestAnimationFrame(this.next)
+    }
+  }
+
+  public random(): void {
+    if (this.unities && this.unities.length) {
+      this.unities[0].position.x = Math.random() * this.size
+      this.unities[0].position.y = Math.random() * this.size
     }
   }
 }

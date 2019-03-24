@@ -4,7 +4,11 @@ import { context } from '@/store'
 
 export default class Circle implements IDrawable {
   public position: Vector = new Vector()
-  public radius: number = 50
+  public radius: number
+
+  constructor(radius: number = 50) {
+    this.radius = radius
+  }
 
   public linkPosition(position: Vector) {
     this.position = position
