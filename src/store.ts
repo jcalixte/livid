@@ -1,43 +1,58 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import Unity from './models/Unity'
+import Circle from './engine/Circle'
 import Shape from './engine/Shape'
 
 Vue.use(Vuex)
 
 const SET_CONTEXT: string = 'SET_CONTEXT'
-const ADD_SHAPE: string = 'ADD_SHAPE'
+const ADD_UNITY: string = 'ADD_UNITY'
+const RESET_UNITIES: string = 'RESET_UNITIES'
 
 interface IState {
   context: CanvasRenderingContext2D | null
-  shapes: Shape[]
+  unities: Unity[]
 }
 
 const store = new Vuex.Store<IState>({
   state: {
     context: null,
-    shapes: []
+    unities: []
   },
   mutations: {
     [SET_CONTEXT]: (state, ctx): void => {
       state.context = ctx
     },
-    [ADD_SHAPE]: (state, shape: Shape): void => {
-      state.shapes.push(shape)
+    [ADD_UNITY]: (state, unity: Unity): void => {
+      state.unities.push(unity)
+    },
+    [RESET_UNITIES]: (state): void => {
+      state.unities = []
     }
   },
   actions: {
     setContext({ commit }, ctx: CanvasRenderingContext2D): void {
       commit(SET_CONTEXT, ctx)
     },
-    addShape({ commit }, shapes: Shape[]): void {
-      if (shapes) {
-        shapes.forEach((shape: Shape) => commit(ADD_SHAPE, shape))
+    addUnity({ commit }, unities: Unity[]): void {
+      if (!unities) {
+        return
       }
+      unities.forEach((unity: Unity) => {
+        commit(ADD_UNITY, unity)
+      })
+    },
+    resetUnity({ commit }): void {
+      commit(RESET_UNITIES)
     }
   },
   getters: {
     context: (state: IState) => state.context,
-    shapes: (state: IState) => state.shapes
+    shapes: (state: IState): Shape[] =>
+      state.unities.map((unity: Unity) => unity.shape),
+    fieldOfViews: (state: IState): Circle[] =>
+      state.unities.map((unity: Unity) => unity.fieldOfView)
   }
 })
 
