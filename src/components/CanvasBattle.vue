@@ -6,10 +6,12 @@
       <button @click="next(0, false)">suivant</button>
       <button @click="random">random</button>
     </div>
-    <div>
+    <div class="canvas-container">
       <canvas ref="canvas" :width="size" :height="size"></canvas>
     </div>
-    <pre v-for="(unity, k) in unities" :key="k">{{ unity }}</pre>
+    <div class="log-container">
+      <pre v-for="(unity, k) in unities" :key="k">{{ unity }}</pre>
+    </div>
   </div>
 </template>
 
@@ -85,6 +87,13 @@ export default class CanvasBattle extends Vue {
 
 <style scoped>
 .canvas-battle {
+  display: flex;
+}
+.canvas-container,
+.log-container {
+  width: 100%;
+}
+.log-container {
   display: flex;
 }
 </style>

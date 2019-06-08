@@ -29,8 +29,8 @@ export default class Vector implements IVector {
     return this.x === v.x && this.y === v.y
   }
 
-  public equalsAngle(v: Vector): boolean {
-    return this.angle === v.angle
+  public equalsAngle(v: Vector, precision: number = 2): boolean {
+    return this.angle.toFixed(precision) === v.angle.toFixed(precision)
   }
 
   public isAround(v: Vector, around: number): boolean {
@@ -51,51 +51,42 @@ export default class Vector implements IVector {
     }
   }
 
-  public substract(v: Vector): void {
-    this.x -= v.x
-    this.y -= v.y
+  public substract(v: Vector): Vector {
+    return new Vector({
+      x: this.x - v.x,
+      y: this.y - v.y
+    })
   }
 
-  public mul(n: number, min?: number): void {
-    this.x *= n
-    this.y *= n
+  public mul(n: number, min?: number): Vector {
+    const vector = new Vector(this)
+    vector.x *= n
+    vector.y *= n
     if (min) {
-      if (Math.abs(this.x) < min) {
-        this.x = 0
+      if (Math.abs(vector.x) < min) {
+        vector.x = 0
       }
-      if (Math.abs(this.y) < min) {
-        this.y = 0
+      if (Math.abs(vector.y) < min) {
+        vector.y = 0
       }
     }
+    return vector
   }
 
-  public div(n: number, min?: number): void {
+  public div(n: number, min?: number): Vector {
     if (!n) {
       // tslint:disable-next-line:no-console
       console.error('can not divide by 0')
-      return
+      throw { error: 'can not divide by 0' }
     }
-    this.mul(1 / n, min)
+    return this.mul(1 / n, min)
   }
 
   public converge(position: Vector, vector: Vector, step?: number): void {
-    const v = new Vector(vector)
-    v.substract(position)
-    const { x, y } = v
     if (step) {
-      if (Math.abs(x - step) > Math.abs(x - this.x)) {
-        this.x = x
-      } else {
-        const approachX = this.x < x ? 1 : -1
-        this.x = this.x + approachX * step
-      }
-      if (Math.abs(y - step) > Math.abs(y - this.y)) {
-        this.y = y
-      } else {
-        const approachY = this.y < y ? 1 : -1
-        this.y = this.y + approachY * step
-      }
+      this.add(vector.substract(position).mul(step))
     } else {
+      const { x, y } = vector.substract(position)
       this.x = x
       this.y = y
     }

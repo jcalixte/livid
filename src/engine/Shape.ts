@@ -5,6 +5,7 @@ import { context } from '@/store'
 import IDimension from './interfaces/IDimension'
 import ICoordinate from './interfaces/ICoordinate'
 import ShapeStatus from '@/enums/ShapeStatus'
+import collisionService from '@/services/CollisionService'
 
 export default class Shape implements IDrawable {
   private static globalId: number = 0
@@ -44,17 +45,26 @@ export default class Shape implements IDrawable {
     this.position.add(this.velocity)
     this.velocity.add(this.acceleration)
     if (this.target) {
-      if (!this.angle.equalsAngle(this.target.position)) {
-        this.angle.converge(this.position, this.target.position)
+      if (!this.inDirection) {
+        if (this.stopped) {
+          this.angle.converge(this.position, this.target.position)
+        } else {
+          this.slowDown(0.88)
+        }
+        return
       }
       if (this.collision(this.target)) {
         this.status = ShapeStatus.InCollision
-        this.acceleration.reset()
-        this.velocity.mul(0.92, 0.001)
+        this.slowDown(0.92)
       } else {
         this.acceleration = this.position.direction(this.target.position, 0.01)
       }
     }
+  }
+
+  public slowDown(percent: number): void {
+    this.acceleration.reset()
+    this.velocity = this.velocity.mul(percent, 0.001)
   }
 
   public draw(): void {
@@ -122,92 +132,15 @@ export default class Shape implements IDrawable {
     return coord
   }
 
-  public getCoordinateArray(): ReadonlyArray<IVector> {
+  private getCoordinateArray(): ReadonlyArray<IVector> {
     const { a, b, c, d } = this.getCoordinates()
     return [a, b, c, d]
   }
 
   private collision(target: Shape): boolean {
-    const shapes: Array<ReadonlyArray<IVector>> = [
-      this.getCoordinateArray(),
-      target.getCoordinateArray()
-    ]
-
     const firstPositions: ReadonlyArray<IVector> = this.getCoordinateArray()
     const secondPositions: ReadonlyArray<IVector> = target.getCoordinateArray()
-
-    let minA
-    let maxA
-    let projected
-    let i
-    let i1
-    let j
-    let minB
-    let maxB
-
-    for (i = 0; i < shapes.length; i++) {
-      // for each polygon, look at each edge of the polygon, and determine if it separates
-      // the two shapes
-      const shape = shapes[i]
-      for (i1 = 0; i1 < shape.length; i1++) {
-        // grab 2 vertices to create an edge
-        const i2 = (i1 + 1) % shape.length
-        const p1 = shape[i1]
-        const p2 = shape[i2]
-
-        // find the line perpendicular to this edge
-        const normal = {
-          x: p2.y - p1.y,
-          y: p1.x - p2.x
-        }
-
-        minA = maxA = undefined
-        // for each vertex in the first shape, project it onto the line perpendicular to the edge
-        // and keep track of the min and max of these values
-        for (j = 0; j < firstPositions.length; j++) {
-          projected =
-            normal.x * firstPositions[j].x + normal.y * firstPositions[j].y
-
-          if (!minA || projected < minA) {
-            minA = projected
-          }
-
-          if (!maxA || projected > maxA) {
-            maxA = projected
-          }
-        }
-
-        // for each vertex in the second shape, project it onto the line perpendicular to the edge
-        // and keep track of the min and max of these values
-        minB = maxB = undefined
-        for (j = 0; j < secondPositions.length; j++) {
-          projected =
-            normal.x * secondPositions[j].x + normal.y * secondPositions[j].y
-
-          if (!minB || projected < minB) {
-            minB = projected
-          }
-
-          if (!maxB || projected > maxB) {
-            maxB = projected
-          }
-        }
-
-        // if there is no overlap between the projects, the edge we are looking at separates the two
-        // shapes, and we know there is no overlap
-        if (
-          minB !== undefined &&
-          maxB !== undefined &&
-          minA !== undefined &&
-          maxA !== undefined &&
-          (maxA < minB || maxB < minA)
-        ) {
-          return false
-        }
-      }
-    }
-
-    return true
+    return collisionService.inCollision(firstPositions, secondPositions)
   }
 
   private rotatePoint(
@@ -223,5 +156,17 @@ export default class Shape implements IDrawable {
       x: cosAngle * (x - x0) - sinAngle * (y - y0) + x0,
       y: sinAngle * (x - x0) + cosAngle * (y - y0) + y0
     }
+  }
+
+  private get stopped(): boolean {
+    return this.velocity.mag === 0
+  }
+
+  private get inDirection(): boolean {
+    if (!this.target) {
+      return false
+    }
+    const angleDesired = this.target.position.substract(this.position)
+    return this.angle.equalsAngle(angleDesired)
   }
 }
