@@ -1,6 +1,17 @@
 import IVector from './interfaces/IVector'
 
 export default class Vector implements IVector {
+  public static dot(a: IVector, b: IVector): number {
+    return a.x * b.x + a.y * b.y
+  }
+
+  public static createVector(a: IVector, b: IVector): IVector {
+    return {
+      x: b.x - a.x,
+      y: b.y - a.y
+    }
+  }
+
   public x: number = 0
   public y: number = 0
   public maxMagnitude: number | undefined
@@ -25,8 +36,11 @@ export default class Vector implements IVector {
     return new Vector(v)
   }
 
-  public equals(v: Vector): boolean {
-    return this.x === v.x && this.y === v.y
+  public equals(v: Vector, zone?: number): boolean {
+    if (!zone) {
+      return this.x === v.x && this.y === v.y
+    }
+    return Math.abs(this.x - v.x) < zone && Math.abs(this.y - v.y) < zone
   }
 
   public equalsAngle(v: Vector, precision: number = 2): boolean {

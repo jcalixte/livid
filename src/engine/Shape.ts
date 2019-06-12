@@ -6,8 +6,9 @@ import IDimension from './interfaces/IDimension'
 import ICoordinate from './interfaces/ICoordinate'
 import ShapeStatus from '@/enums/ShapeStatus'
 import collisionService from '@/services/CollisionService'
+import IShape from './interfaces/IShape'
 
-export default class Shape implements IDrawable {
+export default class Shape implements IShape, IDrawable {
   private static globalId: number = 0
   public id: number = ++Shape.globalId
   public width: number = 20
@@ -18,6 +19,7 @@ export default class Shape implements IDrawable {
   public acceleration: Vector = new Vector()
   public angle: Vector = new Vector()
   public target: Shape | null = null
+  public targetPoint: Vector | null = null
   public status: ShapeStatus = ShapeStatus.Idle
 
   public constructor(vector?: IVector, dimension?: IDimension) {
@@ -38,6 +40,10 @@ export default class Shape implements IDrawable {
     this.target = target
   }
 
+  public setTargetPoint(targetPoint: Vector) {
+    this.targetPoint = targetPoint
+  }
+
   public update(): void {
     if (this.velocity.mag > 0) {
       this.status = ShapeStatus.Moving
@@ -45,20 +51,12 @@ export default class Shape implements IDrawable {
     this.position.add(this.velocity)
     this.velocity.add(this.acceleration)
     if (this.target) {
-      if (!this.inDirection) {
-        if (this.stopped) {
-          this.angle.converge(this.position, this.target.position)
-        } else {
-          this.slowDown(0.88)
-        }
-        return
-      }
-      if (this.collision(this.target)) {
-        this.status = ShapeStatus.InCollision
-        this.slowDown(0.92)
-      } else {
-        this.acceleration = this.position.direction(this.target.position, 0.01)
-      }
+      this.goToTarget()
+      return
+    }
+    if (this.targetPoint) {
+      this.goToPoint()
+      return
     }
   }
 
@@ -137,6 +135,45 @@ export default class Shape implements IDrawable {
     return [a, b, c, d]
   }
 
+  private goToTarget(): void {
+    if (!this.target) {
+      return
+    }
+    if (!this.inDirection) {
+      if (this.stopped) {
+        this.angle.converge(this.position, this.target.position)
+      } else {
+        this.slowDown(0.88)
+      }
+      return
+    }
+    if (this.collision(this.target)) {
+      this.status = ShapeStatus.InCollision
+      this.slowDown(0.92)
+    } else {
+      this.acceleration = this.position.direction(this.target.position, 0.01)
+    }
+  }
+
+  private goToPoint(): void {
+    if (!this.targetPoint) {
+      return
+    }
+    if (!this.inPointDirection) {
+      if (this.stopped) {
+        this.angle.converge(this.position, this.targetPoint)
+      } else {
+        this.slowDown(0.88)
+      }
+      return
+    }
+    if (this.position.equals(this.targetPoint, 20)) {
+      this.slowDown(0.92)
+    } else {
+      this.acceleration = this.position.direction(this.targetPoint, 0.01)
+    }
+  }
+
   private collision(target: Shape): boolean {
     const firstPositions: ReadonlyArray<IVector> = this.getCoordinateArray()
     const secondPositions: ReadonlyArray<IVector> = target.getCoordinateArray()
@@ -167,6 +204,14 @@ export default class Shape implements IDrawable {
       return false
     }
     const angleDesired = this.target.position.substract(this.position)
+    return this.angle.equalsAngle(angleDesired)
+  }
+
+  private get inPointDirection(): boolean {
+    if (!this.targetPoint) {
+      return false
+    }
+    const angleDesired = this.targetPoint.substract(this.position)
     return this.angle.equalsAngle(angleDesired)
   }
 }

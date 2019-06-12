@@ -5,9 +5,19 @@
       <button @click="init">réinitialiser</button>
       <button @click="next(0, false)">suivant</button>
       <button @click="random">random</button>
+      <section v-if="unitySelected">
+        <h3>Unité sélectionnée</h3>
+        {{ unitySelected.country }}
+      </section>
     </div>
     <div class="canvas-container">
-      <canvas ref="canvas" :width="size" :height="size"></canvas>
+      <canvas
+        ref="canvas"
+        :width="size"
+        :height="size"
+        @click.prevent="select"
+        @contextmenu.prevent="target"
+      ></canvas>
     </div>
     <div class="log-container">
       <pre v-for="(unity, k) in unities" :key="k">{{ unity }}</pre>
@@ -19,6 +29,10 @@
 import { Action, Getter } from 'vuex-class'
 import { Component, Vue } from 'vue-property-decorator'
 import Unity from '@/models/Unity'
+import IVector from '../engine/interfaces/IVector'
+import IShape from '@/engine/interfaces/IShape'
+import interactionService from '@/services/InteractionService'
+import Vector from '@/engine/Vector'
 
 @Component
 export default class CanvasBattle extends Vue {
@@ -33,6 +47,7 @@ export default class CanvasBattle extends Vue {
   @Getter
   public unities!: Unity[]
   public canvas: HTMLCanvasElement | null = null
+  public unitySelected: Unity | null = null
   public size: number = 400
 
   public mounted(): void {
@@ -56,7 +71,7 @@ export default class CanvasBattle extends Vue {
       { x: centerX + 100, y: centerY - 100 },
       '#af0550'
     )
-    ally.setTarget(enemy)
+    // ally.setTarget(enemy)
 
     this.addUnity([enemy, ally])
   }
@@ -76,10 +91,43 @@ export default class CanvasBattle extends Vue {
     }
   }
 
+  public select(event: any): void {
+    if (!this.canvasCoordinate) {
+      return
+    }
+    const x = event.x - this.canvasCoordinate.x
+    const y = event.y - this.canvasCoordinate.y
+    this.unitySelected = interactionService.isInUnities({ x, y }, this.unities)
+  }
+
+  public target(event: any): void {
+    if (!this.canvasCoordinate || !this.unitySelected) {
+      return
+    }
+    const x = event.x - this.canvasCoordinate.x
+    const y = event.y - this.canvasCoordinate.y
+    const target = interactionService.isInUnities({ x, y }, this.unities)
+    if (target) {
+      this.unitySelected.setTarget(target)
+    } else {
+      this.unitySelected.setTargetPoint(new Vector({ x, y }))
+    }
+  }
+
   public random(): void {
     if (this.unities && this.unities.length) {
       this.unities[0].position.x = Math.random() * this.size
       this.unities[0].position.y = Math.random() * this.size
+    }
+  }
+
+  private get canvasCoordinate(): IVector | null {
+    if (!this.canvas) {
+      return null
+    }
+    return {
+      x: this.canvas.offsetLeft,
+      y: this.canvas.offsetTop
     }
   }
 }

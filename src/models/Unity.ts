@@ -23,7 +23,13 @@ export default class Unity implements IDrawable {
   }
 
   public setTarget(target: Unity) {
+    this.shape.targetPoint = null
     this.shape.setTarget(target.shape)
+  }
+
+  public setTargetPoint(point: Vector) {
+    this.shape.target = null
+    this.shape.setTargetPoint(point)
   }
 
   public draw(): void {
