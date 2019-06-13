@@ -8,7 +8,11 @@
       <section v-if="unitySelected">
         <h3>Unité sélectionnée</h3>
         {{ unitySelected.country }}
+        {{ unitySelected.shape.angle }}
       </section>
+      <div class="log-container">
+        <pre v-for="(unity, k) in unities" :key="k">{{ unity }}</pre>
+      </div>
     </div>
     <div class="canvas-container">
       <canvas
@@ -18,9 +22,6 @@
         @click.prevent="select"
         @contextmenu.prevent="target"
       ></canvas>
-    </div>
-    <div class="log-container">
-      <pre v-for="(unity, k) in unities" :key="k">{{ unity }}</pre>
     </div>
   </div>
 </template>
@@ -48,7 +49,7 @@ export default class CanvasBattle extends Vue {
   public unities!: Unity[]
   public canvas: HTMLCanvasElement | null = null
   public unitySelected: Unity | null = null
-  public size: number = 400
+  public size: number = 800
 
   public mounted(): void {
     this.init()
@@ -134,6 +135,9 @@ export default class CanvasBattle extends Vue {
 </script>
 
 <style scoped>
+canvas {
+  border: 1px solid #333333;
+}
 .canvas-battle {
   display: flex;
 }
